@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  app:
+    container_name: app
+    build: 
+      context: ./infra/app
+      dockerfile: Dockerfile
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./app:/home/node/app
+    ports:
+      - 3000:3000
+      - 6006:6006
+  
+  web:
+    build: 
+      dockerfile: ./infra/web/Dockerfile
+    ports:
+      - 8080:80
+    volumes:
+      - ./api:/var/www
+  
+  api:
+    container_name: api
+    build:
+      context: ./infra/php
+      dockerfile: Dockerfile
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./api:/var/www
+
+  storage:
+    image: quay.io/minio/minio:RELEASE.2023-01-18T04-36-38Z
+    container_name: 'storage'
+    ports:
+      - 9020:9020
+      - 9090:9090
+    environment:
+      MINIO_ROOT_USER: root
+      MINIO_ROOT_PASSWORD: password
+    command: server --console-address ":9090" /data --address :9020
+    volumes:
+      - ./storage/.minio/data:/data
+
+  db:
+    build:
+      dockerfile: "./infra/mysql/Dockerfile"
+    ports:
+      - "3306:3306"
+    environment:
+      - "MYSQL_ROOT_PASSWORD=password"
+      - "MYSQL_DATABASE=database"
+      - "MYSQL_USER=laravel"
+      - "MYSQL_PASSWORD=password"
